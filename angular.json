@@ -17,6 +17,9 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ],
             "outputPath": "dist/leaflet-map",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -30,6 +33,7 @@
               "src/assets"
             ],
             "styles": [
+              "./node_modules/leaflet/dist/leaflet.css",
               "src/styles.scss"
             ],
             "scripts": []
