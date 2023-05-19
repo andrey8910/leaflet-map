@@ -1,5 +1,7 @@
 # LeafletMap
 
+Interactive map created with open-source JavaScript library Leaflet.
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.0.5.
 
 ## Development server
