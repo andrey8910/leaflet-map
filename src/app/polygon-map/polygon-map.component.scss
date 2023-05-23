@@ -1,5 +1,27 @@
-.map-container {
-  width: 100%;
-  height: 100%;
-  position: inherit;
+:host {
+  .coords-block {
+    display: flex;
+    gap: 10px;
+    position: absolute;
+    left: 50px;
+    top: 10px;
+    z-index: 1000;
+
+    input {
+      width: 100px;
+      height: 20px;
+    }
+
+    button {
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
+
+  .map-container {
+    width: 100%;
+    height: 100%;
+    position: inherit;
+  }
 }
