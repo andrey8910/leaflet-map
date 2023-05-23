@@ -13,8 +13,14 @@ export class PolygonMapComponent implements OnInit {
   myMap: any;
 
   formGroupCoords: FormGroup = this.fb.group({
-    latitude: new FormControl('', Validators.required),
-    longitude: new FormControl('', Validators.required),
+    latitude: new FormControl('', [
+      Validators.pattern(/^([+-])?(?:90(?:\.0{1,6})?|((?:|[1-8])[0-9])(?:\.[0-9]{1,9})?)$/),
+      Validators.required,
+    ]),
+    longitude: new FormControl('', [
+      Validators.pattern(/^([+-])?(?:180(?:\.0{1,6})?|((?:|[1-9]|1[0-7])[0-9])(?:\.[0-9]{1,9})?)$/),
+      Validators.required,
+    ]),
   });
 
   constructor(private fb: FormBuilder) {}
