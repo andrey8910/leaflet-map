@@ -1,4 +1,29 @@
 :host {
+  &::ng-deep {
+    .markers-select-panel-red.mat-mdc-select-panel {
+      background: rgba(255, 0, 0, 0.3);
+    }
+
+    .markers-select-panel-green.mat-mdc-select-panel {
+      background: rgba(0, 255, 0, 0.3);
+    }
+
+    .markers-select-panel-blue.mat-mdc-select-panel {
+      background: rgba(0, 0, 255, 0.3);
+    }
+
+    .select-color-marker span {
+      width: 2rem;
+      height: 2rem;
+      display: block;
+      left: -1.5rem;
+      top: -1.5rem;
+      position: relative;
+      border-radius: 3rem 3rem 0;
+      transform: rotate(45deg);
+      border: 3px solid;
+    }
+  }
   .coords-block {
     display: flex;
     gap: 10px;
@@ -6,6 +31,11 @@
     left: 50px;
     top: 10px;
     z-index: 1000;
+
+    .coords-field {
+      width: 140px;
+      height: 65px;
+    }
 
     input {
       width: 100px;
@@ -23,5 +53,9 @@
     width: 100%;
     height: 100%;
     position: inherit;
+
+    .my-custom-pin {
+      color: white;
+    }
   }
 }
