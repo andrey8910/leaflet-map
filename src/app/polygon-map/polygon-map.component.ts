@@ -1,13 +1,14 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import * as L from 'leaflet';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
-import { LatLngTuple } from 'leaflet';
+import { LatLngTuple, LeafletEvent, LeafletMouseEvent } from 'leaflet';
 
 @Component({
   selector: 'app-polygon-map',
   templateUrl: './polygon-map.component.html',
   styleUrls: ['./polygon-map.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolygonMapComponent implements OnInit {
   @Input('center') centerCoords: LatLngTuple = [0, 0];
@@ -35,22 +36,27 @@ export class PolygonMapComponent implements OnInit {
     markerColor: new FormControl<MarkerColor>(this.markersColorList[0]),
   });
 
-  get latitudeControl(): number {
-    return this.formGroupCoords.controls['latitude'].value;
+  get latitudeControl(): AbstractControl {
+    return this.formGroupCoords.controls['latitude'];
   }
 
-  get longitudeControl(): number {
-    return this.formGroupCoords.controls['longitude'].value;
+  get longitudeControl(): AbstractControl {
+    return this.formGroupCoords.controls['longitude'];
   }
 
-  get markerColorControl(): MarkerColor {
-    return this.formGroupCoords.controls['markerColor'].value;
+  get markerColorControl(): AbstractControl {
+    return this.formGroupCoords.controls['markerColor'];
   }
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private ref: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.myMap = L.map(this.mapEl?.nativeElement).setView(this.centerCoords, this.mapZoom);
+    this.myMap = L.map(this.mapEl?.nativeElement)
+      .setView(this.centerCoords, this.mapZoom)
+      .on('click', () => {
+        this.latitudeControl.reset();
+        this.longitudeControl.reset();
+      });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.myMap);
@@ -62,14 +68,26 @@ export class PolygonMapComponent implements OnInit {
     const markerIcon = L.divIcon({
       className: 'select-color-marker',
       iconAnchor: [0, 24],
-      html: `<span style="background-color: ${this.markerColorControl.colorValue}"></span>`,
+      html: `<span style="background-color: ${this.markerColorControl.value.colorValue}"></span>`,
     });
 
-    const marker = L.marker([this.latitudeControl, this.longitudeControl], {
+    const marker = L.marker([this.latitudeControl.value, this.longitudeControl.value], {
       icon: markerIcon,
       draggable: true,
-    }).addTo(this.myMap);
+    })
+      .addTo(this.myMap)
+      .on('drag', (e: LeafletEvent) => {
+        this.latitudeControl.setValue(marker.getLatLng().lat);
+        this.longitudeControl.setValue(marker.getLatLng().lng);
+      })
+      .on('click', (e: LeafletMouseEvent) => {
+        this.latitudeControl.setValue(e.latlng.lat);
+        this.longitudeControl.setValue(e.latlng.lng);
+      });
 
     this.myMap.panTo(marker.getLatLng());
+    this.latitudeControl.reset();
+    this.longitudeControl.reset();
+    this.ref.markForCheck();
   }
 }
