@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Inpu
 import * as L from 'leaflet';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
-import { LatLngTuple, LeafletEvent, LeafletMouseEvent } from 'leaflet';
+import { LatLngTuple, LeafletMouseEvent, Marker } from 'leaflet';
 
 @Component({
   selector: 'app-polygon-map',
@@ -16,6 +16,8 @@ export class PolygonMapComponent implements OnInit {
   @ViewChild('map', { static: true }) mapEl: ElementRef | undefined;
   @ViewChild('coords', { static: true }) coordsEl: ElementRef | undefined;
   myMap: any;
+
+  markersList: Marker[] = [];
 
   markersColorList: MarkerColor[] = [
     { colorName: 'red', colorValue: '#f70202' },
@@ -60,11 +62,12 @@ export class PolygonMapComponent implements OnInit {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.myMap);
+    L.layerGroup([...this.markersList]).addTo(this.myMap);
 
     L.control.scale().addTo(this.myMap);
   }
 
-  addMarker(): void {
+  createMarker(): Marker {
     const markerIcon = L.divIcon({
       className: 'select-color-marker',
       iconAnchor: [0, 24],
@@ -72,11 +75,11 @@ export class PolygonMapComponent implements OnInit {
     });
 
     const marker = L.marker([this.latitudeControl.value, this.longitudeControl.value], {
+      title: 'test',
       icon: markerIcon,
       draggable: true,
     })
-      .addTo(this.myMap)
-      .on('drag', (e: LeafletEvent) => {
+      .on('drag', () => {
         this.latitudeControl.setValue(marker.getLatLng().lat);
         this.longitudeControl.setValue(marker.getLatLng().lng);
       })
@@ -85,7 +88,17 @@ export class PolygonMapComponent implements OnInit {
         this.longitudeControl.setValue(e.latlng.lng);
       });
 
+    return marker;
+  }
+
+  addMarker(): void {
+    const marker = this.createMarker();
+    this.markersList.push(marker);
+
+    const markersGroup = L.featureGroup([...this.markersList]).addTo(this.myMap);
     this.myMap.panTo(marker.getLatLng());
+    this.myMap.fitBounds(markersGroup.getBounds());
+
     this.latitudeControl.reset();
     this.longitudeControl.reset();
     this.ref.markForCheck();
