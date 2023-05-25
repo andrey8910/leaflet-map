@@ -3,6 +3,7 @@ import * as L from 'leaflet';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
 import { LatLngTuple, LeafletMouseEvent, Marker } from 'leaflet';
+import 'leaflet-draw';
 
 @Component({
   selector: 'app-polygon-map',
@@ -53,7 +54,7 @@ export class PolygonMapComponent implements OnInit {
   constructor(private fb: FormBuilder, private ref: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.myMap = L.map(this.mapEl?.nativeElement)
+    this.myMap = L.map(this.mapEl?.nativeElement, { drawControl: true })
       .setView(this.centerCoords, this.mapZoom)
       .on('click', () => {
         this.latitudeControl.reset();
@@ -63,6 +64,8 @@ export class PolygonMapComponent implements OnInit {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.myMap);
     L.layerGroup([...this.markersList]).addTo(this.myMap);
+    //const drawControl = new L.Control.Draw();
+    // this.myMap.addControl(drawControl);
 
     L.control.scale().addTo(this.myMap);
   }
