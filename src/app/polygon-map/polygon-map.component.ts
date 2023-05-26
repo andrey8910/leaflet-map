@@ -4,7 +4,7 @@ import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from
 import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, LatLngTuple, LeafletEvent, LeafletMouseEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
-//import './node_modules/leaflet/dist/images/marker-shadow.png';
+
 @Component({
   selector: 'app-polygon-map',
   templateUrl: './polygon-map.component.html',
@@ -27,6 +27,9 @@ export class PolygonMapComponent implements OnInit {
     { colorName: 'blue', colorValue: '#012394' },
     { colorName: 'yellow', colorValue: '#f5ec42' },
   ];
+
+  drawPolygonColor = 'rgba(250, 0, 0, 0.6)';
+  drawPolygonWeight = 2;
 
   formGroupCoords: FormGroup = this.fb.group({
     latitude: new FormControl('', [
@@ -57,23 +60,52 @@ export class PolygonMapComponent implements OnInit {
   ngOnInit(): void {
     this.myMap = this.createMap();
 
-    L.Icon.Default.imagePath = 'assets/';
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.myMap);
 
     L.layerGroup([...this.markersList]).addTo(this.myMap);
+
     const drawControl = new L.Control.Draw({
+      position: 'topright',
+      draw: {
+        polyline: {
+          shapeOptions: {
+            color: this.drawPolygonColor,
+            weight: this.drawPolygonWeight,
+          },
+        },
+        polygon: {
+          shapeOptions: {
+            color: this.drawPolygonColor,
+            weight: this.drawPolygonWeight,
+          },
+        },
+        marker: {
+          icon: L.icon({
+            iconSize: [25, 41],
+            iconAnchor: [13, 41],
+            iconUrl: 'assets/marker-icon.png',
+            shadowUrl: 'assets/marker-shadow.png',
+          }),
+        },
+        rectangle: <any>{
+          showArea: false,
+          shapeOptions: {
+            color: this.drawPolygonColor,
+            weight: this.drawPolygonWeight,
+          },
+        },
+      },
       edit: {
         featureGroup: this.drawnItems,
       },
     });
+
     this.myMap.addControl(drawControl);
 
-    // const toolbar = new L.Toolbar();
-    // toolbar.addToolbar(this.myMap);
     this.drawnItems.addTo(this.myMap);
+
     L.control.scale().addTo(this.myMap);
   }
 
@@ -101,7 +133,6 @@ export class PolygonMapComponent implements OnInit {
         this.drawnItems.addLayer(e.layer);
         this.myMap.addLayer(this.drawnItems);
         this.ref.markForCheck();
-        console.log(this.drawnItems);
       });
   }
 
