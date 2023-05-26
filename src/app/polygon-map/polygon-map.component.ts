@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Inpu
 import * as L from 'leaflet';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
-import { LatLngTuple, LeafletMouseEvent, Marker } from 'leaflet';
+import { DrawMap, LatLngTuple, LeafletEvent, LeafletMouseEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
-
+//import './node_modules/leaflet/dist/images/marker-shadow.png';
 @Component({
   selector: 'app-polygon-map',
   templateUrl: './polygon-map.component.html',
@@ -16,7 +16,8 @@ export class PolygonMapComponent implements OnInit {
   @Input('zoom') mapZoom = 1;
   @ViewChild('map', { static: true }) mapEl: ElementRef | undefined;
   @ViewChild('coords', { static: true }) coordsEl: ElementRef | undefined;
-  myMap: any;
+  myMap!: DrawMap;
+  drawnItems = new L.FeatureGroup();
 
   markersList: Marker[] = [];
 
@@ -54,23 +55,57 @@ export class PolygonMapComponent implements OnInit {
   constructor(private fb: FormBuilder, private ref: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.myMap = L.map(this.mapEl?.nativeElement, { drawControl: true })
+    this.myMap = this.createMap();
+
+    L.Icon.Default.imagePath = 'assets/';
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(this.myMap);
+
+    L.layerGroup([...this.markersList]).addTo(this.myMap);
+    const drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: this.drawnItems,
+      },
+    });
+    this.myMap.addControl(drawControl);
+
+    // const toolbar = new L.Toolbar();
+    // toolbar.addToolbar(this.myMap);
+    this.drawnItems.addTo(this.myMap);
+    L.control.scale().addTo(this.myMap);
+  }
+
+  addMarker(): void {
+    const marker = this.createMarker();
+    this.markersList.push(marker);
+
+    const markersGroup = L.featureGroup([...this.markersList]).addTo(this.myMap);
+    this.myMap.panTo(marker.getLatLng());
+    this.myMap.fitBounds(markersGroup.getBounds());
+
+    this.latitudeControl.reset();
+    this.longitudeControl.reset();
+    this.ref.markForCheck();
+  }
+
+  private createMap(): DrawMap {
+    return L.map(this.mapEl?.nativeElement)
       .setView(this.centerCoords, this.mapZoom)
       .on('click', () => {
         this.latitudeControl.reset();
         this.longitudeControl.reset();
+      })
+      .on('draw:created', (e: LeafletEvent) => {
+        this.drawnItems.addLayer(e.layer);
+        this.myMap.addLayer(this.drawnItems);
+        this.ref.markForCheck();
+        console.log(this.drawnItems);
       });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.myMap);
-    L.layerGroup([...this.markersList]).addTo(this.myMap);
-    //const drawControl = new L.Control.Draw();
-    // this.myMap.addControl(drawControl);
-
-    L.control.scale().addTo(this.myMap);
   }
 
-  createMarker(): Marker {
+  private createMarker(): Marker {
     const markerIcon = L.divIcon({
       className: 'select-color-marker',
       iconAnchor: [0, 24],
@@ -92,18 +127,5 @@ export class PolygonMapComponent implements OnInit {
       });
 
     return marker;
-  }
-
-  addMarker(): void {
-    const marker = this.createMarker();
-    this.markersList.push(marker);
-
-    const markersGroup = L.featureGroup([...this.markersList]).addTo(this.myMap);
-    this.myMap.panTo(marker.getLatLng());
-    this.myMap.fitBounds(markersGroup.getBounds());
-
-    this.latitudeControl.reset();
-    this.longitudeControl.reset();
-    this.ref.markForCheck();
   }
 }
