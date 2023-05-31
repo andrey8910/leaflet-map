@@ -13,7 +13,11 @@
     </select>
 
     <button type="submit" [disabled]="!formGroupCoords.valid">add marker</button>
+
+
 </form>
+
+<button (click)="save()">Save</button>
 
 <div #map class="map-container">
 

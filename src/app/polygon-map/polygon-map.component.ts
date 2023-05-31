@@ -19,7 +19,7 @@ export class PolygonMapComponent implements OnInit {
   myMap!: DrawMap;
   drawnItems = new L.FeatureGroup();
 
-  markersList: Marker[] = [];
+  markersList = new L.LayerGroup();
 
   markersColorList: MarkerColor[] = [
     { colorName: 'red', colorValue: '#f70202' },
@@ -28,8 +28,8 @@ export class PolygonMapComponent implements OnInit {
     { colorName: 'yellow', colorValue: '#f5ec42' },
   ];
 
-  drawPolygonColor = 'rgba(250, 0, 0, 0.6)';
-  drawPolygonWeight = 2;
+  drawPolygonColor = 'rgba(250, 0, 0, 0.8)';
+  drawPolygonWeight = 4;
 
   formGroupCoords: FormGroup = this.fb.group({
     latitude: new FormControl('', [
@@ -64,7 +64,8 @@ export class PolygonMapComponent implements OnInit {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.myMap);
 
-    L.layerGroup([...this.markersList]).addTo(this.myMap);
+    L.Icon.Default.imagePath = 'assets/';
+    this.markersList.addTo(this.myMap);
 
     const drawControl = new L.Control.Draw({
       position: 'topright',
@@ -103,23 +104,64 @@ export class PolygonMapComponent implements OnInit {
     });
 
     this.myMap.addControl(drawControl);
-
     this.drawnItems.addTo(this.myMap);
 
     L.control.scale().addTo(this.myMap);
+
+    if (localStorage.getItem('drawn-items')) {
+      const drawItems = localStorage.getItem('drawn-items');
+      if (drawItems === null) {
+        return;
+      }
+      const drawItemJson = JSON.parse(drawItems);
+      drawItemJson.features.map((feature: any) => {
+        const featureType = feature.properties.type;
+        L.geoJSON(feature, {
+          style: {
+            color: this.drawPolygonColor,
+            weight: this.drawPolygonWeight,
+            opacity: 0.65,
+          },
+          pointToLayer: function (geoJsonPoint, latlng) {
+            return featureType === 'circlemarker'
+              ? new L.CircleMarker(latlng, { radius: 10 })
+              : featureType === 'circle'
+              ? new L.Circle(latlng, { radius: feature.properties.radius })
+              : L.marker(latlng, {
+                  icon: L.icon({
+                    iconSize: [25, 41],
+                    iconAnchor: [13, 41],
+                    iconUrl: 'assets/marker-icon.png',
+                    shadowUrl: 'assets/marker-shadow.png',
+                  }),
+                });
+          },
+        }).eachLayer((layer: any) => {
+          layer.feature.properties['type'] = featureType;
+          if (featureType === 'circlemarker' || featureType === 'circle') {
+            layer.feature.properties['radius'] = feature.properties.radius;
+          }
+          this.drawnItems.addLayer(layer);
+        });
+      });
+    }
   }
 
   addMarker(): void {
     const marker = this.createMarker();
-    this.markersList.push(marker);
+    this.markersList.addLayer(marker);
 
-    const markersGroup = L.featureGroup([...this.markersList]).addTo(this.myMap);
+    const markersGroup = L.featureGroup(this.markersList.getLayers()).addTo(this.myMap);
     this.myMap.panTo(marker.getLatLng());
     this.myMap.fitBounds(markersGroup.getBounds());
 
     this.latitudeControl.reset();
     this.longitudeControl.reset();
     this.ref.markForCheck();
+  }
+
+  save(): void {
+    localStorage.setItem('drawn-items', JSON.stringify(this.drawnItems.toGeoJSON()));
   }
 
   private createMap(): DrawMap {
@@ -130,8 +172,37 @@ export class PolygonMapComponent implements OnInit {
         this.longitudeControl.reset();
       })
       .on('draw:created', (e: LeafletEvent) => {
-        this.drawnItems.addLayer(e.layer);
-        this.myMap.addLayer(this.drawnItems);
+        const createdEvent = e as L.DrawEvents.Created;
+        const type = createdEvent.layerType;
+        L.geoJson(createdEvent.layer.toGeoJSON(), {
+          style: {
+            color: this.drawPolygonColor,
+            weight: this.drawPolygonWeight,
+            opacity: 0.65,
+          },
+
+          pointToLayer: function (geoJsonPoint, latlng) {
+            return type === 'circlemarker'
+              ? new L.CircleMarker(latlng, { radius: 10 })
+              : type === 'circle'
+              ? new L.Circle(latlng, { radius: e.layer.getRadius() })
+              : L.marker(latlng, {
+                  icon: L.icon({
+                    iconSize: [25, 41],
+                    iconAnchor: [13, 41],
+                    iconUrl: 'assets/marker-icon.png',
+                    shadowUrl: 'assets/marker-shadow.png',
+                  }),
+                });
+          },
+        }).eachLayer((layer: any) => {
+          layer.feature.properties['type'] = type;
+          if (type === 'circlemarker' || type === 'circle') {
+            layer.feature.properties['radius'] = e.layer.getRadius();
+          }
+          this.drawnItems.addLayer(layer);
+        });
+
         this.ref.markForCheck();
       });
   }

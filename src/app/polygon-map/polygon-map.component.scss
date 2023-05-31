@@ -1,4 +1,4 @@
-//@import url('https://unpkg.com/leaflet@1.5.1/dist/leaflet.css');
+@import url('https://unpkg.com/leaflet@1.5.1/dist/leaflet.css');
 
 :host {
   &::ng-deep {
@@ -56,8 +56,8 @@
     height: 100%;
     position: inherit;
 
-    .my-custom-pin {
-      color: white;
-    }
+    //.my-custom-pin {
+    //  color: red;
+    //}
   }
 }
