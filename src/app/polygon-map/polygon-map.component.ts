@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from
 import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, LatLngTuple, LeafletEvent, LeafletMouseEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
+import { LocalStorageItems } from '../interfaces/local-storage-items';
 
 @Component({
   selector: 'app-polygon-map',
@@ -108,8 +109,8 @@ export class PolygonMapComponent implements OnInit {
 
     L.control.scale().addTo(this.myMap);
 
-    if (localStorage.getItem('drawn-items')) {
-      const drawItems = localStorage.getItem('drawn-items');
+    if (localStorage.getItem(LocalStorageItems.DrawItems)) {
+      const drawItems = localStorage.getItem(LocalStorageItems.DrawItems);
       if (drawItems === null) {
         return;
       }
@@ -161,7 +162,7 @@ export class PolygonMapComponent implements OnInit {
   }
 
   save(): void {
-    localStorage.setItem('drawn-items', JSON.stringify(this.drawnItems.toGeoJSON()));
+    localStorage.setItem(LocalStorageItems.DrawItems, JSON.stringify(this.drawnItems.toGeoJSON()));
   }
 
   private createMap(): DrawMap {
