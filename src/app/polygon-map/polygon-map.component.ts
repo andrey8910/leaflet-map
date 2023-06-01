@@ -110,8 +110,8 @@ export class PolygonMapComponent implements OnInit {
 
     L.control.scale().addTo(this.myMap);
 
-    if (localStorage.getItem(LocalStorageItems.DrawItems)) {
-      const drawItems = localStorage.getItem(LocalStorageItems.DrawItems);
+    if (this.LSService.getItem(LocalStorageItems.DrawItems)) {
+      const drawItems = this.LSService.getItem(LocalStorageItems.DrawItems);
       if (drawItems === null) {
         return;
       }
@@ -165,6 +165,9 @@ export class PolygonMapComponent implements OnInit {
   save(): void {
     this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
   }
+  saveDrawChanges(): void {
+    this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
+  }
 
   private createMap(): DrawMap {
     return L.map(this.mapEl?.nativeElement)
@@ -173,7 +176,7 @@ export class PolygonMapComponent implements OnInit {
         this.latitudeControl.reset();
         this.longitudeControl.reset();
       })
-      .on('draw:created', (e: LeafletEvent) => {
+      .on(L.Draw.Event.CREATED, (e: LeafletEvent) => {
         const createdEvent = e as L.DrawEvents.Created;
         const type = createdEvent.layerType;
         L.geoJson(createdEvent.layer.toGeoJSON(), {
@@ -203,9 +206,16 @@ export class PolygonMapComponent implements OnInit {
             layer.feature.properties['radius'] = e.layer.getRadius();
           }
           this.drawnItems.addLayer(layer);
+          this.saveDrawChanges();
         });
 
         this.ref.markForCheck();
+      })
+      .on('draw:editstop', () => {
+        this.saveDrawChanges();
+      })
+      .on('draw:deletestop', () => {
+        this.saveDrawChanges();
       });
   }
 
