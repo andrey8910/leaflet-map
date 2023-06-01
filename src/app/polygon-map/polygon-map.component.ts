@@ -5,6 +5,7 @@ import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, LatLngTuple, LeafletEvent, LeafletMouseEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
+import { LocalStorageService } from '../services/local-storage.service';
 
 @Component({
   selector: 'app-polygon-map',
@@ -56,7 +57,7 @@ export class PolygonMapComponent implements OnInit {
     return this.formGroupCoords.controls['markerColor'];
   }
 
-  constructor(private fb: FormBuilder, private ref: ChangeDetectorRef) {}
+  constructor(private fb: FormBuilder, private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
 
   ngOnInit(): void {
     this.myMap = this.createMap();
@@ -162,7 +163,7 @@ export class PolygonMapComponent implements OnInit {
   }
 
   save(): void {
-    localStorage.setItem(LocalStorageItems.DrawItems, JSON.stringify(this.drawnItems.toGeoJSON()));
+    this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
   }
 
   private createMap(): DrawMap {
