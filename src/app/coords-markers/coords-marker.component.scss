@@ -1,0 +1,26 @@
+:host {
+  display: flex;
+  position: absolute;
+  left: 50px;
+  top: 10px;
+  z-index: 1000;
+
+  .coords-block {
+    display: flex;
+    gap: 10px;
+
+    .coords-field {
+      width: 140px;
+      height: 65px;
+    }
+
+    input {
+      width: 100px;
+      height: 20px;
+    }
+
+    select {
+      opacity: 0.8;
+    }
+  }
+}

@@ -1,22 +1,8 @@
-<form
-  #coords
-  class="coords-block"
-  [formGroup]="formGroupCoords"
-  (ngSubmit) = "addMarker()"
->
-    <input type="number" placeholder="lat" formControlName = 'latitude'>
 
-    <input type="number" placeholder="lng" formControlName = 'longitude'>
-
-    <select [style.background-color]= markerColorControl.value.colorValue  formControlName="markerColor">
-      <option *ngFor="let item of markersColorList" [ngValue]="item"  [style.background-color]= item.colorValue>{{ item.colorName }}</option>
-    </select>
-
-    <button type="submit" [disabled]="!formGroupCoords.valid">add marker</button>
-
-
-</form>
-
+<app-coords-markers
+  [colorList] = markersColorList
+  [map] = myMap
+></app-coords-markers>
 <div #map class="map-container">
 
 </div>

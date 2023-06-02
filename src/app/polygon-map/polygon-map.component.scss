@@ -1,5 +1,3 @@
-@import url('https://unpkg.com/leaflet@1.5.1/dist/leaflet.css');
-
 :host {
   &::ng-deep {
     .markers-select-panel-red.mat-mdc-select-panel {
@@ -26,38 +24,9 @@
       border: 3px solid;
     }
   }
-  .coords-block {
-    display: flex;
-    gap: 10px;
-    position: absolute;
-    left: 50px;
-    top: 10px;
-    z-index: 1000;
-
-    .coords-field {
-      width: 140px;
-      height: 65px;
-    }
-
-    input {
-      width: 100px;
-      height: 20px;
-    }
-
-    button {
-      &:hover {
-        cursor: pointer;
-      }
-    }
-  }
-
   .map-container {
     width: 100%;
     height: 100%;
     position: inherit;
-
-    //.my-custom-pin {
-    //  color: red;
-    //}
   }
 }
