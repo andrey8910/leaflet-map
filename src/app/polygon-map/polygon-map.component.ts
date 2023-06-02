@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Inpu
 import * as L from 'leaflet';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
-import { DrawMap, LatLngTuple, LeafletEvent, LeafletMouseEvent, Marker } from 'leaflet';
+import { DrawMap, LatLngTuple, Layer, LeafletEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
 import { LocalStorageService } from '../services/local-storage.service';
+import { Feature } from 'geojson';
 
 @Component({
   selector: 'app-polygon-map',
@@ -147,11 +148,65 @@ export class PolygonMapComponent implements OnInit {
         });
       });
     }
+
+    if (this.LSService.getItem(LocalStorageItems.CoordsMarkers)) {
+      const storageMarkers = this.LSService.getItem(LocalStorageItems.CoordsMarkers);
+      const markersList = JSON.parse(storageMarkers);
+      markersList.features.map((feature: Feature) => {
+        L.geoJSON(feature, {
+          pointToLayer(geoJsonPoint, latlng): Layer {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: geoJsonPoint.properties.icon.options.className,
+                iconAnchor: geoJsonPoint.properties.icon.options.iconAnchor,
+                html: geoJsonPoint.properties.icon.options.html,
+              }),
+              draggable: true,
+            });
+          },
+        }).eachLayer((marker: any) => {
+          marker
+            .on('drag', () => {
+              this.latitudeControl.setValue(marker.getLatLng().lat);
+              this.longitudeControl.setValue(marker.getLatLng().lng);
+              this.saveMarkerChanges();
+            })
+            .on('click', () => {
+              this.latitudeControl.setValue(marker.getLatLng().lat);
+              this.longitudeControl.setValue(marker.getLatLng().lng);
+            });
+          marker.feature.properties['icon'] = marker.getIcon();
+          this.markersList.addLayer(marker);
+        });
+      });
+      L.featureGroup(this.markersList.getLayers()).addTo(this.myMap);
+    }
   }
 
   addMarker(): void {
     const marker = this.createMarker();
-    this.markersList.addLayer(marker);
+
+    L.geoJSON(marker.toGeoJSON(), {
+      pointToLayer(geoJsonPoint, latlng): Layer {
+        return L.marker(latlng, {
+          icon: marker.getIcon(),
+          draggable: true,
+        });
+      },
+    }).eachLayer((layer: any) => {
+      layer
+        .on('drag', () => {
+          this.latitudeControl.setValue(layer.getLatLng().lat);
+          this.longitudeControl.setValue(layer.getLatLng().lng);
+          this.saveMarkerChanges();
+        })
+        .on('click', () => {
+          this.latitudeControl.setValue(layer.getLatLng().lat);
+          this.longitudeControl.setValue(layer.getLatLng().lng);
+        });
+      layer.feature.properties['icon'] = layer.getIcon();
+      this.markersList.addLayer(layer);
+    });
 
     const markersGroup = L.featureGroup(this.markersList.getLayers()).addTo(this.myMap);
     this.myMap.panTo(marker.getLatLng());
@@ -159,11 +214,13 @@ export class PolygonMapComponent implements OnInit {
 
     this.latitudeControl.reset();
     this.longitudeControl.reset();
+
+    this.saveMarkerChanges();
     this.ref.markForCheck();
   }
 
-  save(): void {
-    this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
+  saveMarkerChanges(): void {
+    this.LSService.setItem(LocalStorageItems.CoordsMarkers, this.markersList.toGeoJSON());
   }
   saveDrawChanges(): void {
     this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
@@ -226,20 +283,10 @@ export class PolygonMapComponent implements OnInit {
       html: `<span style="background-color: ${this.markerColorControl.value.colorValue}"></span>`,
     });
 
-    const marker = L.marker([this.latitudeControl.value, this.longitudeControl.value], {
-      title: 'test',
+    return L.marker([this.latitudeControl.value, this.longitudeControl.value], {
+      title: 'marker',
       icon: markerIcon,
       draggable: true,
-    })
-      .on('drag', () => {
-        this.latitudeControl.setValue(marker.getLatLng().lat);
-        this.longitudeControl.setValue(marker.getLatLng().lng);
-      })
-      .on('click', (e: LeafletMouseEvent) => {
-        this.latitudeControl.setValue(e.latlng.lat);
-        this.longitudeControl.setValue(e.latlng.lng);
-      });
-
-    return marker;
+    });
   }
 }
