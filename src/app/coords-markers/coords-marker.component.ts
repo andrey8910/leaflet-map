@@ -1,11 +1,19 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MarkerColor } from '../interfaces/marker-color';
-import { DrawMap, Layer, LeafletEvent, Marker } from 'leaflet';
+import { DrawMap, Layer, Marker } from 'leaflet';
 import * as L from 'leaflet';
-import { LocalStorageService } from '../services/local-storage.service';
-import { LocalStorageItems } from '../interfaces/local-storage-items';
-import { Feature } from 'geojson';
+import { tap } from 'rxjs';
 
 @Component({
   selector: 'app-coords-markers',
@@ -17,8 +25,12 @@ export class CoordsMarkerComponent implements OnInit {
   @Input() set colorList(value: MarkerColor[]) {
     this.listColor = value;
     this.markerColorControl.setValue(value[0]);
+    this.emitColorMarker.emit(value[0]);
   }
   @Input() map!: DrawMap;
+
+  @Output() emitMarker = new EventEmitter<Marker>();
+  @Output() emitColorMarker = new EventEmitter<MarkerColor>();
 
   @ViewChild('coords', { static: true }) coordsEl: ElementRef | undefined;
 
@@ -52,57 +64,21 @@ export class CoordsMarkerComponent implements OnInit {
   get markerColorControl(): AbstractControl {
     return this.formGroupCoords.controls['markerColor'];
   }
-  constructor(private fb: FormBuilder, private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
+  constructor(private fb: FormBuilder, private ref: ChangeDetectorRef) {}
 
   ngOnInit(): void {
+    this.markerColorControl.valueChanges
+      .pipe(
+        tap((color) => {
+          this.emitColorMarker.emit(color);
+        })
+      )
+      .subscribe();
     this.markersList.addTo(this.map);
-
-    this.map
-      .on('click', () => {
-        this.latitudeControl.reset();
-        this.longitudeControl.reset();
-      })
-      .on(L.Draw.Event.DELETED, (event: LeafletEvent) => {
-        console.log(event);
-      });
-
-    if (this.LSService.getItem(LocalStorageItems.CoordsMarkers)) {
-      const storageMarkers = this.LSService.getItem(LocalStorageItems.CoordsMarkers);
-      const markersList = JSON.parse(storageMarkers);
-      markersList.features.map((feature: Feature) => {
-        L.geoJSON(feature, {
-          pointToLayer(geoJsonPoint, latlng): Layer {
-            return L.marker(latlng, {
-              icon: L.divIcon({
-                className: geoJsonPoint.properties.icon.options.className,
-                iconAnchor: geoJsonPoint.properties.icon.options.iconAnchor,
-                html: geoJsonPoint.properties.icon.options.html,
-              }),
-              draggable: true,
-            });
-          },
-        }).eachLayer((marker: any) => {
-          marker
-            .on('drag', () => {
-              this.latitudeControl.setValue(marker.getLatLng().lat);
-              this.longitudeControl.setValue(marker.getLatLng().lng);
-              this.saveMarkerChanges();
-            })
-            .on('click', () => {
-              this.latitudeControl.setValue(marker.getLatLng().lat);
-              this.longitudeControl.setValue(marker.getLatLng().lng);
-            });
-          //marker.edit = true;
-          marker.feature.properties['icon'] = marker.getIcon();
-          this.markersList.addLayer(marker);
-        });
-      });
-      L.featureGroup(this.markersList.getLayers()).addTo(this.map);
-    }
-  }
-
-  saveMarkerChanges(): void {
-    this.LSService.setItem(LocalStorageItems.CoordsMarkers, this.markersList.toGeoJSON());
+    this.map.on('click', () => {
+      this.latitudeControl.reset();
+      this.longitudeControl.reset();
+    });
   }
 
   addMarker(): void {
@@ -113,6 +89,7 @@ export class CoordsMarkerComponent implements OnInit {
         return L.marker(latlng, {
           icon: marker.getIcon(),
           draggable: true,
+          alt: 'Marker',
         });
       },
     }).eachLayer((layer: any) => {
@@ -120,32 +97,25 @@ export class CoordsMarkerComponent implements OnInit {
         .on('drag', () => {
           this.latitudeControl.setValue(layer.getLatLng().lat);
           this.longitudeControl.setValue(layer.getLatLng().lng);
-          this.saveMarkerChanges();
         })
         .on('click', () => {
           this.latitudeControl.setValue(layer.getLatLng().lat);
           this.longitudeControl.setValue(layer.getLatLng().lng);
         });
       layer.feature.properties['icon'] = layer.getIcon();
-      this.markersList.addLayer(layer);
-      console.log(this.markersList);
+      layer.feature.properties['colorMarker'] = this.markerColorControl.value.colorValue;
+      this.emitMarker.emit(layer);
     });
-
-    const markersGroup = L.featureGroup(this.markersList.getLayers()).addTo(this.map);
-    this.map.panTo(marker.getLatLng());
-    this.map.fitBounds(markersGroup.getBounds());
 
     this.latitudeControl.reset();
     this.longitudeControl.reset();
 
-    this.saveMarkerChanges();
     this.ref.markForCheck();
   }
 
   private createMarker(): Marker {
     const markerIcon = L.divIcon({
       className: 'select-color-marker',
-      iconAnchor: [0, 24],
       html: `<span style="background-color: ${this.markerColorControl.value.colorValue}"></span>`,
     });
 
