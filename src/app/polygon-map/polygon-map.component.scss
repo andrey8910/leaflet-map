@@ -12,16 +12,18 @@
       background: rgba(0, 0, 255, 0.3);
     }
 
-    .select-color-marker span {
-      width: 2rem;
-      height: 2rem;
-      display: block;
-      left: -1.5rem;
-      top: -1.5rem;
-      position: relative;
-      border-radius: 3rem 3rem 0;
-      transform: rotate(45deg);
-      border: 3px solid;
+    .select-color-marker {
+      span {
+        width: 24px;
+        height: 24px;
+        display: block;
+        left: -12px;
+        top: -24px;
+        position: relative;
+        border-radius: 3rem 3rem 0;
+        transform: rotate(45deg);
+        border: 2px solid;
+      }
     }
   }
   .map-container {

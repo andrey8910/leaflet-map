@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import * as L from 'leaflet';
 import { MarkerColor } from '../interfaces/marker-color';
-import { DrawMap, LatLngTuple, LeafletEvent } from 'leaflet';
+import { DrawMap, LatLngTuple, LeafletEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
 import { LocalStorageService } from '../services/local-storage.service';
@@ -30,6 +30,35 @@ export class PolygonMapComponent implements OnInit {
   drawPolygonColor = 'rgba(250, 0, 0, 0.8)';
   drawPolygonWeight = 4;
 
+  drawControl = new L.Control.Draw({
+    position: 'topright',
+    draw: {
+      polyline: {
+        shapeOptions: {
+          color: this.drawPolygonColor,
+          weight: this.drawPolygonWeight,
+        },
+      },
+      polygon: {
+        shapeOptions: {
+          color: this.drawPolygonColor,
+          weight: this.drawPolygonWeight,
+        },
+      },
+      rectangle: <any>{
+        showArea: false,
+        shapeOptions: {
+          color: this.drawPolygonColor,
+          weight: this.drawPolygonWeight,
+        },
+      },
+    },
+    edit: {
+      featureGroup: this.drawnItems,
+    },
+  });
+
+  private colorNewMarker: MarkerColor = { colorName: '', colorValue: '' };
   constructor(private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
 
   ngOnInit(): void {
@@ -41,43 +70,7 @@ export class PolygonMapComponent implements OnInit {
 
     L.Icon.Default.imagePath = 'assets/';
 
-    const drawControl = new L.Control.Draw({
-      position: 'topright',
-      draw: {
-        polyline: {
-          shapeOptions: {
-            color: this.drawPolygonColor,
-            weight: this.drawPolygonWeight,
-          },
-        },
-        polygon: {
-          shapeOptions: {
-            color: this.drawPolygonColor,
-            weight: this.drawPolygonWeight,
-          },
-        },
-        marker: {
-          icon: L.icon({
-            iconSize: [25, 41],
-            iconAnchor: [13, 41],
-            iconUrl: 'assets/marker-icon.png',
-            shadowUrl: 'assets/marker-shadow.png',
-          }),
-        },
-        rectangle: <any>{
-          showArea: false,
-          shapeOptions: {
-            color: this.drawPolygonColor,
-            weight: this.drawPolygonWeight,
-          },
-        },
-      },
-      edit: {
-        featureGroup: this.drawnItems,
-      },
-    });
-
-    this.myMap.addControl(drawControl);
+    this.myMap.addControl(this.drawControl);
     this.drawnItems.addTo(this.myMap);
 
     L.control.scale().addTo(this.myMap);
@@ -102,12 +95,11 @@ export class PolygonMapComponent implements OnInit {
               : featureType === 'circle'
               ? new L.Circle(latlng, { radius: feature.properties.radius })
               : L.marker(latlng, {
-                  icon: L.icon({
-                    iconSize: [25, 41],
-                    iconAnchor: [13, 41],
-                    iconUrl: 'assets/marker-icon.png',
-                    shadowUrl: 'assets/marker-shadow.png',
+                  icon: L.divIcon({
+                    className: 'select-color-marker',
+                    html: `<span style="background-color: ${geoJsonPoint.properties.colorMarker}"></span>`,
                   }),
+                  draggable: true,
                 });
           },
         }).eachLayer((layer: any) => {
@@ -121,8 +113,29 @@ export class PolygonMapComponent implements OnInit {
     }
   }
 
+  addMarker(marker: Marker): void {
+    this.drawnItems.addLayer(marker);
+    this.myMap.panTo(marker.getLatLng());
+    this.myMap.fitBounds(this.drawnItems.getBounds());
+    this.saveDrawChanges();
+  }
+
+  colorMarker(color: MarkerColor): void {
+    this.colorNewMarker = color;
+    this.drawControl.setDrawingOptions({
+      marker: {
+        icon: L.divIcon({
+          className: 'select-color-marker',
+          html: `<span style="background-color: ${color.colorValue}"></span>`,
+        }),
+      },
+    });
+    this.ref.markForCheck();
+  }
+
   saveDrawChanges(): void {
     this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
+    this.ref.markForCheck();
   }
 
   private createMap(): DrawMap {
@@ -131,6 +144,7 @@ export class PolygonMapComponent implements OnInit {
       .on(L.Draw.Event.CREATED, (e: LeafletEvent) => {
         const createdEvent = e as L.DrawEvents.Created;
         const type = createdEvent.layerType;
+        const colorMarker: MarkerColor = this.colorNewMarker;
         L.geoJson(createdEvent.layer.toGeoJSON(), {
           style: {
             color: this.drawPolygonColor,
@@ -144,19 +158,19 @@ export class PolygonMapComponent implements OnInit {
               : type === 'circle'
               ? new L.Circle(latlng, { radius: e.layer.getRadius() })
               : L.marker(latlng, {
-                  icon: L.icon({
-                    iconSize: [25, 41],
-                    iconAnchor: [13, 41],
-                    iconUrl: 'assets/marker-icon.png',
-                    shadowUrl: 'assets/marker-shadow.png',
+                  icon: L.divIcon({
+                    className: 'select-color-marker',
+                    html: `<span style="background-color: ${colorMarker.colorValue}"></span>`,
                   }),
                 });
           },
         }).eachLayer((layer: any) => {
           layer.feature.properties['type'] = type;
+          layer.feature.properties['colorMarker'] = this.colorNewMarker.colorValue;
           if (type === 'circlemarker' || type === 'circle') {
             layer.feature.properties['radius'] = e.layer.getRadius();
           }
+
           this.drawnItems.addLayer(layer);
           this.saveDrawChanges();
         });

@@ -2,6 +2,8 @@
 <app-coords-markers
   [colorList] = markersColorList
   [map] = myMap
+  (emitMarker)="addMarker($event)"
+  (emitColorMarker)="colorMarker($event)"
 ></app-coords-markers>
 <div #map class="map-container">
 
