@@ -14,6 +14,7 @@ import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, Layer, Marker } from 'leaflet';
 import * as L from 'leaflet';
 import { tap } from 'rxjs';
+import { Coordinates } from '../interfaces/coordinates';
 
 @Component({
   selector: 'app-coords-markers',
@@ -22,12 +23,17 @@ import { tap } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoordsMarkerComponent implements OnInit {
+  @Input() map!: DrawMap;
   @Input() set colorList(value: MarkerColor[]) {
     this.listColor = value;
     this.markerColorControl.setValue(value[0]);
     this.emitColorMarker.emit(value[0]);
   }
-  @Input() map!: DrawMap;
+  @Input() set markerCoords(value: Coordinates) {
+    this.latitudeControl.setValue(value.lat);
+    this.longitudeControl.setValue(value.lng);
+    this.ref.markForCheck();
+  }
 
   @Output() emitMarker = new EventEmitter<Marker>();
   @Output() emitColorMarker = new EventEmitter<MarkerColor>();
@@ -79,6 +85,9 @@ export class CoordsMarkerComponent implements OnInit {
       this.latitudeControl.reset();
       this.longitudeControl.reset();
     });
+    this.latitudeControl.reset();
+    this.longitudeControl.reset();
+    this.ref.markForCheck();
   }
 
   addMarker(): void {
@@ -88,7 +97,6 @@ export class CoordsMarkerComponent implements OnInit {
       pointToLayer(geoJsonPoint, latlng): Layer {
         return L.marker(latlng, {
           icon: marker.getIcon(),
-          draggable: true,
           alt: 'Marker',
         });
       },
@@ -122,7 +130,6 @@ export class CoordsMarkerComponent implements OnInit {
     return L.marker([this.latitudeControl.value, this.longitudeControl.value], {
       title: 'marker',
       icon: markerIcon,
-      draggable: true,
     });
   }
 }

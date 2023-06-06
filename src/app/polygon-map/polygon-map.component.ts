@@ -5,6 +5,7 @@ import { DrawMap, LatLngTuple, LeafletEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
 import { LocalStorageService } from '../services/local-storage.service';
+import { Coordinates } from '../interfaces/coordinates';
 
 @Component({
   selector: 'app-polygon-map',
@@ -29,6 +30,8 @@ export class PolygonMapComponent implements OnInit {
 
   drawPolygonColor = 'rgba(250, 0, 0, 0.8)';
   drawPolygonWeight = 4;
+
+  markerCoordinates: Coordinates = { lat: 0, lng: 0 };
 
   drawControl = new L.Control.Draw({
     position: 'topright',
@@ -59,6 +62,7 @@ export class PolygonMapComponent implements OnInit {
   });
 
   private colorNewMarker: MarkerColor = { colorName: '', colorValue: '' };
+
   constructor(private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
 
   ngOnInit(): void {
@@ -99,7 +103,6 @@ export class PolygonMapComponent implements OnInit {
                     className: 'select-color-marker',
                     html: `<span style="background-color: ${geoJsonPoint.properties.colorMarker}"></span>`,
                   }),
-                  draggable: true,
                 });
           },
         }).eachLayer((layer: any) => {
@@ -107,9 +110,17 @@ export class PolygonMapComponent implements OnInit {
           if (featureType === 'circlemarker' || featureType === 'circle') {
             layer.feature.properties['radius'] = feature.properties.radius;
           }
+          layer.on('drag', (e: any) => {
+            this.markerCoordinates = {
+              lat: e.latlng.lat,
+              lng: e.latlng.lng,
+            };
+            this.ref.markForCheck();
+          });
           this.drawnItems.addLayer(layer);
         });
       });
+      this.myMap.fitBounds(this.drawnItems.getBounds());
     }
   }
 
@@ -120,7 +131,7 @@ export class PolygonMapComponent implements OnInit {
     this.saveDrawChanges();
   }
 
-  colorMarker(color: MarkerColor): void {
+  getColorMarker(color: MarkerColor): void {
     this.colorNewMarker = color;
     this.drawControl.setDrawingOptions({
       marker: {
@@ -167,9 +178,18 @@ export class PolygonMapComponent implements OnInit {
         }).eachLayer((layer: any) => {
           layer.feature.properties['type'] = type;
           layer.feature.properties['colorMarker'] = this.colorNewMarker.colorValue;
+
           if (type === 'circlemarker' || type === 'circle') {
             layer.feature.properties['radius'] = e.layer.getRadius();
           }
+
+          layer.on('drag', (e: any) => {
+            this.markerCoordinates = {
+              lat: e.latlng.lat,
+              lng: e.latlng.lng,
+            };
+            this.ref.markForCheck();
+          });
 
           this.drawnItems.addLayer(layer);
           this.saveDrawChanges();
