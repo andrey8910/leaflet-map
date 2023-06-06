@@ -5,6 +5,7 @@ import {
   ElementRef,
   EventEmitter,
   Input,
+  OnDestroy,
   OnInit,
   Output,
   ViewChild,
@@ -13,7 +14,7 @@ import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from
 import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, Layer, Marker } from 'leaflet';
 import * as L from 'leaflet';
-import { tap } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
 import { Coordinates } from '../interfaces/coordinates';
 
 @Component({
@@ -22,7 +23,7 @@ import { Coordinates } from '../interfaces/coordinates';
   styleUrls: ['./coords-marker.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CoordsMarkerComponent implements OnInit {
+export class CoordsMarkerComponent implements OnInit, OnDestroy {
   @Input() map!: DrawMap;
   @Input() set colorList(value: MarkerColor[]) {
     this.listColor = value;
@@ -54,6 +55,7 @@ export class CoordsMarkerComponent implements OnInit {
     markerColor: new FormControl<MarkerColor>({ colorName: '', colorValue: '' }),
   });
   private listColor: MarkerColor[] = [];
+  private destroy$ = new Subject<void>();
 
   get markersColorList() {
     return this.listColor;
@@ -77,7 +79,8 @@ export class CoordsMarkerComponent implements OnInit {
       .pipe(
         tap((color) => {
           this.emitColorMarker.emit(color);
-        })
+        }),
+        takeUntil(this.destroy$)
       )
       .subscribe();
     this.markersList.addTo(this.map);
@@ -131,5 +134,10 @@ export class CoordsMarkerComponent implements OnInit {
       title: 'marker',
       icon: markerIcon,
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
