@@ -4,9 +4,19 @@
   [formGroup]="formGroupCoords"
   (ngSubmit) = "addMarker()"
 >
-  <input type="number" placeholder="lat" formControlName = 'latitude'>
+  <input
+    type="number"
+    placeholder="lng"
+    formControlName = 'longitude'
+    (paste)="pasteCoords($event)"
+  >
 
-  <input type="number" placeholder="lng" formControlName = 'longitude'>
+  <input
+    type="number"
+    placeholder="lat"
+    formControlName = 'latitude'
+    (paste)="pasteCoords($event)"
+  >
 
   <select
     [style.background-color]= markerColorControl.value.colorValue

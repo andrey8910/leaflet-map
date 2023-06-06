@@ -124,6 +124,23 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
     this.ref.markForCheck();
   }
 
+  pasteCoords(e: ClipboardEvent) {
+    if (e.clipboardData === null) {
+      console.log('null coords');
+      return;
+    }
+
+    const pastValue = e.clipboardData.getData('text').trim().split(' ', 2);
+
+    if (typeof +pastValue[0] === 'number' && typeof +pastValue[1] === 'number') {
+      (e.target as HTMLInputElement).blur();
+      this.longitudeControl.setValue(+pastValue[0]);
+      this.latitudeControl.setValue(+pastValue[1]);
+    }
+
+    this.ref.markForCheck();
+  }
+
   private createMarker(): Marker {
     const markerIcon = L.divIcon({
       className: 'select-color-marker',
