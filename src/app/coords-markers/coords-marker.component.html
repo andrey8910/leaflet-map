@@ -2,29 +2,37 @@
   #coords
   class="coords-block"
   [formGroup]="formGroupCoords"
-  (ngSubmit) = "addMarker()"
+  (ngSubmit)="addMarker()"
 >
   <input
     type="number"
     placeholder="lng"
-    formControlName = 'longitude'
+    formControlName='longitude'
     (paste)="pasteCoords($event)"
   >
 
   <input
     type="number"
     placeholder="lat"
-    formControlName = 'latitude'
+    formControlName='latitude'
     (paste)="pasteCoords($event)"
   >
 
   <select
-    [style.background-color]= markerColorControl.value.colorValue
+    [style.background-color]=markerColorControl.value.colorValue
     formControlName="markerColor">
-    <option *ngFor="let item of markersColorList" [ngValue]="item"  [style.background-color]= item.colorValue>{{ item.colorName }}</option>
+    <option *ngFor="let item of markersColorList" [ngValue]="item"
+            [style.background-color]=item.colorValue>{{ item.colorName }}</option>
   </select>
 
   <button type="submit" [disabled]="!formGroupCoords.valid">add marker</button>
 
 
 </form>
+<div class="error-valid-block">
+  <p
+    class="error-valid-text"
+    *ngIf="longitudeControl.invalid && longitudeControl.dirty || latitudeControl.invalid && latitudeControl.dirty">
+    incorrect coordinate values
+  </p>
+</div>

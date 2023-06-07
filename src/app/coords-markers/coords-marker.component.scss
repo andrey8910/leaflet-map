@@ -1,5 +1,6 @@
 :host {
   display: flex;
+  flex-direction: column;
   position: absolute;
   left: 50px;
   top: 10px;
@@ -21,6 +22,11 @@
 
     select {
       opacity: 0.8;
+    }
+  }
+  .error-valid-block {
+    .error-valid-text {
+      color: red;
     }
   }
 }
