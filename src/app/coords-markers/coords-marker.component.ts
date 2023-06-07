@@ -28,7 +28,7 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
   @Input() set colorList(value: MarkerColor[]) {
     this.listColor = value;
     this.markerColorControl.setValue(value[0]);
-    this.emitColorMarker.emit(value[0]);
+    this.emitColorControl.emit(value[0]);
   }
   @Input() set markerCoords(value: Coordinates) {
     this.latitudeControl.setValue(value.lat);
@@ -37,7 +37,7 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
   }
 
   @Output() emitMarker = new EventEmitter<Marker>();
-  @Output() emitColorMarker = new EventEmitter<MarkerColor>();
+  @Output() emitColorControl = new EventEmitter<MarkerColor>();
 
   @ViewChild('coords', { static: true }) coordsEl: ElementRef | undefined;
 
@@ -78,7 +78,7 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
     this.markerColorControl.valueChanges
       .pipe(
         tap((color) => {
-          this.emitColorMarker.emit(color);
+          this.emitColorControl.emit(color);
         }),
         takeUntil(this.destroy$)
       )
@@ -126,7 +126,6 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
 
   pasteCoords(e: ClipboardEvent) {
     if (e.clipboardData === null) {
-      console.log('null coords');
       return;
     }
 

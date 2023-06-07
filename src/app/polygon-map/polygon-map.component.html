@@ -4,8 +4,6 @@
   [map] = myMap
   [markerCoords]="markerCoordinates"
   (emitMarker)="addMarker($event)"
-  (emitColorMarker)="getColorMarker($event)"
+  (emitColorControl)="getColorControl($event)"
 ></app-coords-markers>
-<div #map class="map-container">
-
-</div>
+<div #map class="map-container"></div>
