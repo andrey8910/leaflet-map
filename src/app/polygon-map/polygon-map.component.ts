@@ -55,13 +55,19 @@ export class PolygonMapComponent implements OnInit {
           weight: this.drawPolygonWeight,
         },
       },
+      circle: {
+        shapeOptions: {
+          color: this.drawPolygonColor,
+          weight: this.drawPolygonWeight,
+        },
+      },
     },
     edit: {
       featureGroup: this.drawnItems,
     },
   });
 
-  private colorNewMarker: MarkerColor = { colorName: '', colorValue: '' };
+  private colorControl: MarkerColor = { colorName: '', colorValue: '' };
 
   constructor(private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
 
@@ -89,7 +95,7 @@ export class PolygonMapComponent implements OnInit {
         const featureType = feature.properties.type;
         L.geoJSON(feature, {
           style: {
-            color: this.drawPolygonColor,
+            color: feature.properties.color,
             weight: this.drawPolygonWeight,
             opacity: 0.65,
           },
@@ -101,7 +107,7 @@ export class PolygonMapComponent implements OnInit {
               : L.marker(latlng, {
                   icon: L.divIcon({
                     className: 'select-color-marker',
-                    html: `<span style="background-color: ${geoJsonPoint.properties.colorMarker}"></span>`,
+                    html: `<span style="background-color: ${geoJsonPoint.properties.color}"></span>`,
                   }),
                 });
           },
@@ -131,9 +137,32 @@ export class PolygonMapComponent implements OnInit {
     this.saveDrawChanges();
   }
 
-  getColorMarker(color: MarkerColor): void {
-    this.colorNewMarker = color;
+  getColorControl(color: MarkerColor): void {
+    this.colorControl = color;
     this.drawControl.setDrawingOptions({
+      polyline: {
+        shapeOptions: {
+          color: color.colorValue,
+        },
+      },
+      polygon: {
+        shapeOptions: {
+          color: color.colorValue,
+        },
+      },
+      circle: {
+        shapeOptions: {
+          color: color.colorValue,
+        },
+      },
+      circlemarker: {
+        color: color.colorValue,
+      },
+      rectangle: <any>{
+        shapeOptions: {
+          color: color.colorValue,
+        },
+      },
       marker: {
         icon: L.divIcon({
           className: 'select-color-marker',
@@ -155,10 +184,10 @@ export class PolygonMapComponent implements OnInit {
       .on(L.Draw.Event.CREATED, (e: LeafletEvent) => {
         const createdEvent = e as L.DrawEvents.Created;
         const type = createdEvent.layerType;
-        const colorMarker: MarkerColor = this.colorNewMarker;
+        const colorMarker: MarkerColor = this.colorControl;
         L.geoJson(createdEvent.layer.toGeoJSON(), {
           style: {
-            color: this.drawPolygonColor,
+            color: this.colorControl.colorValue,
             weight: this.drawPolygonWeight,
             opacity: 0.65,
           },
@@ -177,7 +206,7 @@ export class PolygonMapComponent implements OnInit {
           },
         }).eachLayer((layer: any) => {
           layer.feature.properties['type'] = type;
-          layer.feature.properties['colorMarker'] = this.colorNewMarker.colorValue;
+          layer.feature.properties['color'] = this.colorControl.colorValue;
 
           if (type === 'circlemarker' || type === 'circle') {
             layer.feature.properties['radius'] = e.layer.getRadius();
