@@ -1,9 +1,18 @@
+<div class="header-map">
+  <app-coords-markers
+    [colorList] = markersColorList
+    [map] = myMap
+    [markerCoords]="markerCoordinates"
+    (emitMarker)="addMarker($event)"
+    (emitColorControl)="getColorControl($event)"
+  ></app-coords-markers>
 
-<app-coords-markers
-  [colorList] = markersColorList
-  [map] = myMap
-  [markerCoords]="markerCoordinates"
-  (emitMarker)="addMarker($event)"
-  (emitColorControl)="getColorControl($event)"
-></app-coords-markers>
+  <app-export-import-data
+    [map] = myMap
+    [mapItems]="drawnItems"
+  ></app-export-import-data>
+</div>
+
+
+
 <div #map class="map-container"></div>
