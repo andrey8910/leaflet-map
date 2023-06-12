@@ -7,11 +7,14 @@
   </a>
 </div>
 <div class="export-import-btn">
-  <a
-    #importBtn
-    (click)="import()"
-  >
+  <label class="upload-btn">
     IMPORT
-  </a>
+    <input
+      type="file"
+      multiple
+      hidden
+    (change)="import($event)"
+    />
+  </label>
 </div>
 
