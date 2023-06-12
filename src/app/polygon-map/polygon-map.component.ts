@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import * as L from 'leaflet';
 import { MarkerColor } from '../interfaces/marker-color';
-import { DrawMap, LatLngTuple, LeafletEvent, Marker } from 'leaflet';
+import { DrawMap, LatLngTuple, Layer, LeafletEvent, Marker } from 'leaflet';
 import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
 import { LocalStorageService } from '../services/local-storage.service';
@@ -92,39 +92,7 @@ export class PolygonMapComponent implements OnInit {
       }
       const drawItemJson = JSON.parse(drawItems);
       drawItemJson.features.map((feature: any) => {
-        const featureType = feature.properties.type;
-        L.geoJSON(feature, {
-          style: {
-            color: feature.properties.color,
-            weight: this.drawPolygonWeight,
-            opacity: 0.65,
-          },
-          pointToLayer: function (geoJsonPoint, latlng) {
-            return featureType === 'circlemarker'
-              ? new L.CircleMarker(latlng, { radius: 10 })
-              : featureType === 'circle'
-              ? new L.Circle(latlng, { radius: feature.properties.radius })
-              : L.marker(latlng, {
-                  icon: L.divIcon({
-                    className: 'select-color-marker',
-                    html: `<span style="background-color: ${geoJsonPoint.properties.color}"></span>`,
-                  }),
-                });
-          },
-        }).eachLayer((layer: any) => {
-          layer.feature.properties['type'] = featureType;
-          if (featureType === 'circlemarker' || featureType === 'circle') {
-            layer.feature.properties['radius'] = feature.properties.radius;
-          }
-          layer.on('drag', (e: any) => {
-            this.markerCoordinates = {
-              lat: e.latlng.lat,
-              lng: e.latlng.lng,
-            };
-            this.ref.markForCheck();
-          });
-          this.drawnItems.addLayer(layer);
-        });
+        this.loadFeaturesOptions(feature);
       });
       this.myMap.fitBounds(this.drawnItems.getBounds());
     }
@@ -176,6 +144,18 @@ export class PolygonMapComponent implements OnInit {
   saveDrawChanges(): void {
     this.LSService.setItem(LocalStorageItems.DrawItems, this.drawnItems.toGeoJSON());
     this.ref.markForCheck();
+  }
+
+  getImportFile(file: any) {
+    const futures = file.features;
+    if (futures.length > 0) {
+      this.clearFeatureGroup();
+      futures.map((feature: any) => {
+        this.loadFeaturesOptions(feature);
+      });
+
+      this.saveDrawChanges();
+    }
   }
 
   private createMap(): DrawMap {
@@ -232,5 +212,47 @@ export class PolygonMapComponent implements OnInit {
       .on(L.Draw.Event.DELETESTOP, () => {
         this.saveDrawChanges();
       });
+  }
+
+  private clearFeatureGroup(): void {
+    this.drawnItems.eachLayer((layer: Layer) => {
+      this.drawnItems.removeLayer(layer);
+    });
+  }
+
+  private loadFeaturesOptions(feature: any): void {
+    const featureType = feature.properties.type;
+    new L.GeoJSON(feature, {
+      style: {
+        color: feature.properties.color,
+        weight: this.drawPolygonWeight,
+        opacity: 0.65,
+      },
+      pointToLayer: function (geoJsonPoint, latlng) {
+        return featureType === 'circlemarker'
+          ? new L.CircleMarker(latlng, { radius: 10 })
+          : featureType === 'circle'
+          ? new L.Circle(latlng, { radius: feature.properties.radius })
+          : L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'select-color-marker',
+                html: `<span style="background-color: ${geoJsonPoint.properties.color}"></span>`,
+              }),
+            });
+      },
+    }).eachLayer((layer: any) => {
+      layer.feature.properties['type'] = featureType;
+      if (featureType === 'circlemarker' || featureType === 'circle') {
+        layer.feature.properties['radius'] = feature.properties.radius;
+      }
+      layer.on('drag', (e: any) => {
+        this.markerCoordinates = {
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+        };
+        this.ref.markForCheck();
+      });
+      this.drawnItems.addLayer(layer);
+    });
   }
 }
