@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Inpu
 import * as L from 'leaflet';
 import { MarkerColor } from '../interfaces/marker-color';
 import { DrawMap, LatLngTuple, Layer, LeafletEvent, Marker } from 'leaflet';
-import 'leaflet-draw';
 import { LocalStorageItems } from '../interfaces/local-storage-items';
 import { LocalStorageService } from '../services/local-storage.service';
 import { Coordinates } from '../interfaces/coordinates';
+import 'leaflet-draw';
+import 'leaflet.markercluster';
 
 @Component({
   selector: 'app-polygon-map',
@@ -67,6 +68,8 @@ export class PolygonMapComponent implements OnInit {
     },
   });
 
+  markerCluster = L.markerClusterGroup({ animate: true });
+
   private colorControl: MarkerColor = { colorName: '', colorValue: '' };
 
   constructor(private ref: ChangeDetectorRef, private LSService: LocalStorageService) {}
@@ -81,6 +84,7 @@ export class PolygonMapComponent implements OnInit {
     L.Icon.Default.imagePath = 'assets/';
 
     this.myMap.addControl(this.drawControl);
+    this.myMap.addLayer(this.markerCluster);
     this.drawnItems.addTo(this.myMap);
 
     L.control.scale().addTo(this.myMap);
@@ -94,12 +98,17 @@ export class PolygonMapComponent implements OnInit {
       drawItemJson.features.map((feature: any) => {
         this.loadFeaturesOptions(feature);
       });
-      this.myMap.fitBounds(this.drawnItems.getBounds());
+      this.myMap.fitBounds(this.markerCluster.getBounds());
+      this.ref.markForCheck();
     }
   }
 
   addMarker(marker: Marker): void {
     this.drawnItems.addLayer(marker);
+    if (marker.options.alt === 'Marker') {
+      this.markerCluster.addLayer(marker);
+      this.ref.markForCheck();
+    }
     this.myMap.panTo(marker.getLatLng());
     this.myMap.fitBounds(this.drawnItems.getBounds());
     this.saveDrawChanges();
@@ -192,6 +201,10 @@ export class PolygonMapComponent implements OnInit {
             layer.feature.properties['radius'] = e.layer.getRadius();
           }
 
+          if (type === 'marker') {
+            this.markerCluster.addLayer(layer);
+          }
+
           layer.on('drag', (e: any) => {
             this.markerCoordinates = {
               lat: e.latlng.lat,
@@ -210,6 +223,7 @@ export class PolygonMapComponent implements OnInit {
         this.saveDrawChanges();
       })
       .on(L.Draw.Event.DELETESTOP, () => {
+        this.markerCluster.clearLayers();
         this.saveDrawChanges();
       });
   }
@@ -222,6 +236,7 @@ export class PolygonMapComponent implements OnInit {
 
   private loadFeaturesOptions(feature: any): void {
     const featureType = feature.properties.type;
+
     new L.GeoJSON(feature, {
       style: {
         color: feature.properties.color,
@@ -253,6 +268,11 @@ export class PolygonMapComponent implements OnInit {
         this.ref.markForCheck();
       });
       this.drawnItems.addLayer(layer);
+      if (layer.options.alt === 'Marker' || featureType === 'Marker') {
+        this.markerCluster.addLayer(layer);
+        console.log('!');
+      }
+      this.ref.markForCheck();
     });
   }
 }
