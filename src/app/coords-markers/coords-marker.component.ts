@@ -114,7 +114,7 @@ export class CoordsMarkerComponent implements OnInit, OnDestroy {
           this.longitudeControl.setValue(layer.getLatLng().lng);
         });
       layer.feature.properties['icon'] = layer.getIcon();
-      layer.feature.properties['colorMarker'] = this.markerColorControl.value.colorValue;
+      layer.feature.properties['color'] = this.markerColorControl.value.colorValue;
       this.emitMarker.emit(layer);
     });
 
